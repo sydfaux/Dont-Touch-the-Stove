@@ -1,4 +1,5 @@
 import torch
+import math
 
 from einops import rearrange
 from torch import nn
@@ -32,11 +33,22 @@ class CausalSelfAttention(nn.Module):
     return proj
 
   def attention(self, key, query, value, attention_mask):
+    bs, nh, seq_len, hs = query.size()
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
+    # calculate normalized QK^T for each head
+    Q_K = query @ key.transpose(-2, -1) / math.sqrt(hs)
 
+    #creating and applying attention mask
+    casual_att_mask = torch.tril(torch.ones(seq_len, seq_len)).view(1, 1, seq_len, seq_len)
+    masked_Q_K  = Q_K.masked_fill_(casual_att_mask[:, :, :seq_len, :seq_len] == 0, -math.inf)
 
+    # applying softmax and multiplying with V
+    att = nn.functional.softmax(masked_Q_K, dim=-1) @ value
+
+    #concatenate multi-head attention outputs
+    attn_value = rearrange(att.transpose(1, 2), 'b t h d -> b t (h d)', h=self.num_attention_heads)
+    return attn_value
+  
   def forward(self, hidden_states, attention_mask):
     """
     hidden_states: [bs, seq_len, hidden_state]
