@@ -65,8 +65,9 @@ class AdamW(Optimizer):
                 ###       Refer to the default project handout for more details.
                 ### YOUR CODE HERE
                 if "m" not in state and "v" not in state:
-                    state["m"]  = torch.zeros(p.size())
-                    state["v"] = torch.zeros(p.size())
+                    device = torch.device('cuda')
+                    state["m"]  = torch.zeros(p.size()).to(device)
+                    state["v"] = torch.zeros(p.size()).to(device)
                     state["t"] = 0
 
                 t = state["t"] + 1
