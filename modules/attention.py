@@ -39,7 +39,10 @@ class CausalSelfAttention(nn.Module):
     Q_K = query @ key.transpose(-2, -1) / math.sqrt(hs)
 
     #creating and applying attention mask
-    device = torch.device('cuda')
+    if torch.cuda.is_available():
+      device = torch.device('cuda')
+    else:
+      device = torch.device('cpu')
     casual_att_mask = torch.tril(torch.ones(seq_len, seq_len)).view(1, 1, seq_len, seq_len).to(device)
     masked_Q_K  = Q_K.masked_fill_(casual_att_mask[:, :, :seq_len, :seq_len] == 0, -math.inf)
 
