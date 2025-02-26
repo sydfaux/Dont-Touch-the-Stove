@@ -51,7 +51,7 @@ class ParaphraseGPT(nn.Module):
   def __init__(self, args):
     super().__init__()
     self.gpt = GPT2Model.from_pretrained(model=args.model_size, d=args.d, l=args.l, num_heads=args.num_heads)
-    self.paraphrase_detection_head = nn.Linear(args.d, 2)  # Paraphrase detection has two outputs: 1 (yes) or 0 (no).
+    self.paraphrase_detection_head = nn.Linear(args.d, self.gpt.config.vocab_size)  # Paraphrase detection has two outputs: 1 (yes) or 0 (no).
 
     # By default, fine-tune the full model.
     for param in self.gpt.parameters():
@@ -72,7 +72,8 @@ class ParaphraseGPT(nn.Module):
 
     'Takes a batch of sentences and produces embeddings for them.'
     ### YOUR CODE HERE
-    raise NotImplementedError
+    last_token = self.gpt(input_ids, attention_mask)["last_token"]
+    return self.paraphrase_detection_head(last_token)
 
 
 
