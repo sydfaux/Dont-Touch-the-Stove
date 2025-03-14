@@ -60,6 +60,46 @@ class ParaphraseDetectionDataset(Dataset):
     }
 
     return batched_data
+  
+class DPODataset(Dataset):
+  def __init__(self, dataset, args):
+    self.dataset = dataset
+    self.p = args
+    self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    self.tokenizer.pad_token = self.tokenizer.eos_token
+
+  def __len__(self):
+    return len(self.dataset)
+
+  def __getitem__(self, idx):
+    return self.dataset[idx]
+
+  def collate_fn(self, all_data):
+    sent1 = [x[0] for x in all_data]
+    sent2 = [x[1] for x in all_data]
+    # labels = torch.LongTensor([x[2] for x in all_data])
+    win = ['yes' if label == 1 else 'no' for label in [x[2] for x in all_data]]
+    win = self.tokenizer(win, return_tensors='pt', padding=True, truncation=True)['input_ids']
+    lose = ['yes' if label == 1 else 'no' for label in [x[3] for x in all_data]]
+    lose = self.tokenizer(lose, return_tensors='pt', padding=True, truncation=True)['input_ids']
+    sent_ids = [x[4] for x in all_data]
+
+    cloze_style_sents = [f'Question 1: "{s1}"\nQuestion 2: "{s2}\nAre these questions asking the same thing?\n' for
+                         (s1, s2) in zip(sent1, sent2)]
+    encoding = self.tokenizer(cloze_style_sents, return_tensors='pt', padding=True, truncation=True)
+
+    token_ids = torch.LongTensor(encoding['input_ids'])
+    attention_mask = torch.LongTensor(encoding['attention_mask'])
+
+    batched_data = {
+      'token_ids': token_ids,
+      'attention_mask': attention_mask,
+      'win': win,
+      'lose': lose,
+      'sent_ids': sent_ids
+    }
+
+    return batched_data
 
 
 class ParaphraseDetectionTestDataset(Dataset):
@@ -117,6 +157,23 @@ def load_paraphrase_data(paraphrase_filename, split='train'):
                                   int(float(record['is_duplicate'])), sent_id))
         except:
           pass
+
+  print(f"Loaded {len(paraphrase_data)} {split} examples from {paraphrase_filename}")
+  return paraphrase_data
+
+def load_dpo_data(paraphrase_filename, split='train'):
+  paraphrase_data = []
+  
+  with open(paraphrase_filename, 'r') as fp:
+    for record in csv.DictReader(fp, delimiter=','):
+      try:
+        sent_id = record['id'].lower().strip()
+        paraphrase_data.append((preprocess_string(record['sentence1']),
+                                  preprocess_string(record['sentence2']),
+                                  int(float(record['win'])), int(float(record['lose'])),
+                                  sent_id))
+      except:
+        pass
 
   print(f"Loaded {len(paraphrase_data)} {split} examples from {paraphrase_filename}")
   return paraphrase_data
