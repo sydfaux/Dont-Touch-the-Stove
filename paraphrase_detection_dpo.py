@@ -208,7 +208,7 @@ def test(args):
 def get_args():
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--para_train", type=str, default="data/quora-dpo-dev.csv")
+  parser.add_argument("--para_train", type=str, default="data/quora-dpo.csv")
   parser.add_argument("--para_dev", type=str, default="data/quora-dev.csv")
   parser.add_argument("--para_test", type=str, default="data/quora-test-student.csv")
   parser.add_argument("--para_dev_out", type=str, default="predictions/para-dev-output.csv")
