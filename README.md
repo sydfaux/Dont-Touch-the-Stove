@@ -1,4 +1,4 @@
-# CS 224N Default Final Project: Build GPT-2
+# Dont-Touch-the-Stove
 
 This is the default final project for the Stanford CS 224N class. Please refer to the project handout on the course
 website for detailed instructions and an overview of the codebase.
